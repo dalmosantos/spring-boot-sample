@@ -1,28 +1,41 @@
 pipeline {
-  agent any
-  stages {
+   agent {
+      docker {
+         image 'maven:3-alpine'
+         label 'my-defined-label'
+         args  '-v ${JENKINS_HOME}/.m2:/root/.m2'
+      }
+   }
+   stages {
     stage('checkout project') {
+      agent none
       steps {
         checkout scm
       }
     }
     stage('check docker install and build env') {
+      agent none
       steps {
-        sh '''docker -v
-docker-compose -v
-docker ps
-make start-docker-registry
-make build-docker-env'''
+        sh '''
+         make start-docker-registry'''
       }
     }
     stage('test project and serve') {
+
       steps {
-        sh '''docker-compose run --rm test
-docker-compose up -d server'''
+        sh '''
+        mvn test
+        '''
       }
     }
     stage('wait for confirm alpha') {
+      agent none
       parallel {
+        stage('start server') {
+          steps {
+            sh "docker-compose up -d server"
+          }
+        }
         stage('wait for confirm alpha') {
           steps {
             input(message: 'Does staging at http://localhost:8000 look good?', ok: 'Deploy to production', submitter: 'admin', submitterParameter: 'PERSON')
@@ -42,17 +55,28 @@ docker-compose up -d server'''
       }
     }
     stage('stop alpha') {
+      agent none
       steps {
         sh 'docker-compose stop server'
       }
     }
-    stage('deploy project') {
+    stage('package project') {
       steps {
-        sh '''docker-compose run --rm package
-make build-docker-prod-image
-docker push localhost:5000/java_sample_prod
-make deploy-production-local'''
+        sh '''
+         mvn package
+         make build-docker-prod-image
+         '''
       }
     }
+    stage('deploy project') {
+      agent none
+      steps {
+        sh '''
+         docker push localhost:5000/java_sample_prod
+         make deploy-production-local
+         '''
+      }
+    }
+    
   }
 }
