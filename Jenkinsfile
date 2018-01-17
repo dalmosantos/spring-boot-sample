@@ -26,7 +26,6 @@ docker-compose up -d server'''
         stage('wait for confirm alpha') {
           steps {
             input(message: 'Does staging at http://localhost:8000 look good?', ok: 'Deploy to production', submitter: 'admin', submitterParameter: 'string(name: \'PERSON\', defaultValue: \'Mr Jenkins\', description: \'Who should I say hello to?\')')
-            echo 'Hello, ${PERSON}, nice to meet you.'
           }
         }
         stage('junit report') {
