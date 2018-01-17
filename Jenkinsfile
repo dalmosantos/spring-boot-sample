@@ -26,6 +26,7 @@ docker-compose up -d server'''
         stage('wait for confirm alpha') {
           steps {
             input(message: 'Does staging at http://localhost:8000 look good?', ok: 'Deploy to production', submitter: 'admin', submitterParameter: 'PERSON')
+            echo 'Hello, ${PERSON}, nice to meet you.'
           }
         }
         stage('junit report') {
@@ -43,7 +44,6 @@ docker-compose up -d server'''
     stage('stop alpha') {
       steps {
         sh 'docker-compose stop server'
-        echo 'echo \'Hello, ${PERSON}, nice to meet you.\''
       }
     }
     stage('deploy project') {
