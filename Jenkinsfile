@@ -1,44 +1,31 @@
 pipeline {
-   agent {
-      docker {
-         image 'maven:3-alpine'
-         label 'my-defined-label'
-         args  '-v ${JENKINS_HOME}/.m2:/root/.m2'
-      }
-   }
-   stages {
+  agent any
+  stages {
     stage('checkout project') {
-      agent none
       steps {
         checkout scm
       }
     }
     stage('check docker install and build env') {
-      agent none
       steps {
-        sh '''
-         make start-docker-registry'''
+        sh '''docker -v
+docker-compose -v
+docker ps
+make start-docker-registry
+make build-docker-env'''
       }
     }
     stage('test project and serve') {
-
       steps {
-        sh '''
-        mvn test
-        '''
+        sh '''docker-compose run --rm test
+docker-compose up -d server'''
       }
     }
     stage('wait for confirm alpha') {
-      agent none
       parallel {
-        stage('start server') {
-          steps {
-            sh "docker-compose up -d server"
-          }
-        }
         stage('wait for confirm alpha') {
           steps {
-            input(message: 'Does staging at http://localhost:8000 look good?', ok: 'Deploy to production', submitter: 'admin', submitterParameter: 'PERSON')
+            input(message: 'Does staging at http://localhost:8000 look good?', ok: 'Deploy to production', submitter: 'admin', submitterParameter: 'string(name: \'PERSON\', defaultValue: \'Mr Jenkins\', description: \'Who should I say hello to?\')')
             echo 'Hello, ${PERSON}, nice to meet you.'
           }
         }
@@ -55,28 +42,17 @@ pipeline {
       }
     }
     stage('stop alpha') {
-      agent none
       steps {
         sh 'docker-compose stop server'
       }
     }
-    stage('package project') {
-      steps {
-        sh '''
-         mvn package
-         make build-docker-prod-image
-         '''
-      }
-    }
     stage('deploy project') {
-      agent none
       steps {
-        sh '''
-         docker push localhost:5000/java_sample_prod
-         make deploy-production-local
-         '''
+        sh '''docker-compose run --rm package
+make build-docker-prod-image
+docker push localhost:5000/java_sample_prod
+make deploy-production-local'''
       }
     }
-    
   }
 }
