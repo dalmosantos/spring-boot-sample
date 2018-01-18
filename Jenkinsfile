@@ -19,17 +19,8 @@ docker-compose up -d server'''
       }
     }
     stage('QA alpha') {
-      parallel {
-        stage('QA alpha') {
-          steps {
-            input(message: 'it is OK?', ok: 'go!', submitter: 'admin')
-          }
-        }
-        stage('') {
-          steps {
-            junit '**/target/surefire-reports/TEST-*.xml'
-          }
-        }
+      steps {
+        input(message: 'it is OK?', ok: 'go!', submitter: 'admin')
       }
     }
     stage('stop alpha') {
