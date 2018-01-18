@@ -28,5 +28,12 @@ docker-compose up -d server'''
         sh 'docker-compose stop server'
       }
     }
+    stage('deploy') {
+      steps {
+        sh '''make build-docker-prod-image
+docker push localhost:5000/java_sample_prod
+make deploy-production-local'''
+      }
+    }
   }
 }
