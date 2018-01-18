@@ -1,11 +1,16 @@
 pipeline {
-    agent any
-    stages {
-        stage('checkout project') {
-            steps {
-                //git url: 'https://github.com/agileworks-tw/spring-boot-sample.git'
-                checkout scm
-            }
-        }
-   }
+  agent any
+  stages {
+    stage('checkout project') {
+      steps {
+        checkout scm
+      }
+    }
+    stage('bulid evn') {
+      steps {
+        sh '''make start-docker-registry
+make build-docker-env'''
+      }
+    }
+  }
 }
